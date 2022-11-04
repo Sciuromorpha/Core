@@ -24,6 +24,8 @@ config.read_dict(
 # Try get environ variables.
 env_mode = os.environ.get("SCIUROMORPHA_MODE", "development")
 config_files = [
+    f"../../../config.ini",
+    f"../../../{env_mode}.ini",
     f"../../config.ini",
     f"../../{env_mode}.ini",
     f"../config.ini",
