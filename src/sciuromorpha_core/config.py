@@ -55,6 +55,11 @@ db_section.update(
     }
 )
 
+if "url" in db_section:
+    db_url = db_section["url"]
+else:
+    db_url = f'{db_section["driver"]}://{db_section["user"]}{":" if db_section["password"] else ""}{db_section["password"]}@{db_section["host"]}{":" if db_section["port"] else ""}{db_section["port"]}/{db_section["db"]}'
+
 config.read_dict(
     {
         "sciuromorpha": {
@@ -62,10 +67,8 @@ config.read_dict(
             "config_files": config_files,
         },
         "db": {
-            "url": f'{db_section["driver"]}://{db_section["user"]}'
-            f'{":" if db_section["password"] else ""}{db_section["password"]}'
-            f'@{db_section["host"]}{":" if db_section["port"] else ""}'
-            f'{db_section["port"]}/{db_section["db"]}',
+            "url": db_url,
+            "sqlalchemy.url": db_url,
         },
     }
 )
