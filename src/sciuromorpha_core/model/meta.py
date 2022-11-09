@@ -7,6 +7,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import OID, UUID, BIT, ARRAY
 
+
 class Meta(Base):
     __tablename__ = "meta"
 
