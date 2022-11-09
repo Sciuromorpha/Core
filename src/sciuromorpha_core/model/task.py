@@ -10,10 +10,12 @@ from sqlalchemy.dialects.postgresql import OID, UUID, BIT, ARRAY, ENUM, BYTEA
 class Task(Base):
     __tablename__ = "task"
 
-    id = Column(Integer, Identity(cycle=True), primary_key=True)
+    id = Column(Integer, Identity(cycle=True), index=True, primary_key=True)
     meta_id = Column(UUID(as_uuid=True), ForeignKey("meta.id"))
     worker = Column(String)
     param = Column(BYTEA)
     status = Column(
         ENUM("pending", "waiting", "running", "success", "failed", name="task-status")
     )
+
+    meta = relationship("Meta", back_populates="tasks")
