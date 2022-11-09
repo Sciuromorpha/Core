@@ -11,7 +11,9 @@ from sqlalchemy.dialects.postgresql import OID, UUID, BIT, ARRAY
 class Meta(Base):
     __tablename__ = "meta"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     meta = Column(JSON(none_as_null=True))
     origin_url = Column(String)
     process_tag = Column(ARRAY(String, dimensions=1))
+
+    tasks = relationship("Task", back_populates="meta")
