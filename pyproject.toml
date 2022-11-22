@@ -11,6 +11,7 @@ python = "^3.10"
 alembic = "^1.8.1"
 psycopg2-binary = "^2.9.5"
 fastapi = "^0.86.0"
+nameko = "^2.14.1"
 
 
 [build-system]
