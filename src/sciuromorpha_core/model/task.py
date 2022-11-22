@@ -1,4 +1,4 @@
-from .base import Base
+from sciuromorpha_core.db.base_class import Base
 from sqlalchemy import Column, Identity
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer, String, JSON
