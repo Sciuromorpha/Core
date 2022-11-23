@@ -1,14 +1,16 @@
+import copy
 from uuid import UUID
 from typing import Any, Union
 
 from nameko.rpc import rpc, RpcProxy
 from nameko.events import EventDispatcher
 
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from sciuromorpha_core.db.session import SessionFactory
-from sciuromorpha_core.model import Meta as MetaModel
+from sciuromorpha_core import model 
 
 
 class Meta:
@@ -17,54 +19,54 @@ class Meta:
     dispatch = EventDispatcher()
 
     @rpc
-    def create(self, metadata: dict, origin_url: str):
-        meta = MetaModel(meta=metadata, origin_url=origin_url)
+    def create(self, metadata: dict):
+        # Extract origin_url from meta.
+        meta = model.Meta(meta=metadata, origin_url=metadata.get('origin_url', None))
         with SessionFactory.begin() as session:
-            # stmt = insert(MetaModel).values(meta=metadata, origin_url=origin_url).on_conflict_do_nothing()
+            # stmt = insert(model.Meta).values(meta=metadata, origin_url=origin_url).on_conflict_do_nothing()
             # session.execute(stmt)
             session.add(meta)
 
         # Publish event to other services.
-        self.dispatch("create", meta)
-        return meta
+        result = meta.to_dict()
+        self.dispatch("create", result)
+        return result
 
     @rpc
-    def merge(self, meta_id: Union[str, UUID], metadata: dict, origin_url):
+    def merge(self, meta_id: Union[str, UUID], metadata: dict):
         # Try get meta for UPDATE
         with SessionFactory.begin() as session:
-            try:
-                meta = (
-                    session.query(MetaModel)
-                    .filter(
-                        (MetaModel.id == meta_id) | (MetaModel.origin_url == origin_url)
-                    )
-                    .with_for_update()
-                    .one()
-                )
-                
-            except NoResultFound:
-                session.rollback()
-                return self.create(metadata=metadata, origin_url=origin_url)
-            except MultipleResultsFound:
-                pass
+            meta = session.get(model.Meta, id)
+            clone_meta = copy.copy(meta.meta)
 
+            # Not deep clone right now.
+            for key in metadata.keys():
+                clone_meta[key] = metadata[key]
+
+            meta.meta = clone_meta
+            session.add(meta)
+
+        result = meta.to_dict()
         # Publish event to other services.
-        self.dispatch("merge", meta)
-        return meta
+        self.dispatch("merge", result)
+        return result
 
     @rpc
     def get_by_id(self, id: Union[str, UUID]):
         with SessionFactory.begin() as session:
-            # stmt = select(MetaModel).where(MetaModel.id == id)
+            # stmt = select(model.Meta).where(model.Meta.id == id)
             # return session.execute(stmt).first()
-            meta = session.get(MetaModel, id)
+            meta = session.get(model.Meta, id)
 
-        return meta
+        return meta.to_dict()
 
     @rpc
     def get_by_origin_url(self, url: str):
-        pass
+        with SessionFactory.begin() as session:
+            meta = session.execute(select(model.Meta).where(model.Meta.origin_url == url)).first()
+
+        return meta.to_dict()
 
     @rpc
-    def bulk_get(query: Any, offset: int = 0, limit: int = 100):
+    def query(query: Any, offset: int = 0, limit: int = 100):
         pass
