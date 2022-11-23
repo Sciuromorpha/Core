@@ -13,7 +13,7 @@ class Meta(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
     meta = Column(JSON(none_as_null=True))
-    origin_url = Column(String)
+    origin_url = Column(String, index=True, unique=True)
     process_tag = Column(ARRAY(String, dimensions=1))
 
     tasks = relationship("Task", back_populates="meta")
