@@ -1,5 +1,4 @@
-"""Added meta/task relationship
-
+"""Added meta/task primary key index
 Revision ID: 50f16fff837a
 Revises: da1cc51f7c3b
 Create Date: 2022-11-09 17:07:49.419349
@@ -17,8 +16,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_index(op.f("ix_meta_id"), "meta", ["id"], unique=False)
-    op.create_index(op.f("ix_task_id"), "task", ["id"], unique=False)
+    op.create_index(op.f("ix_meta_id"), "meta", ["id"], unique=True)
+    op.create_index(op.f("ix_task_id"), "task", ["id"], unique=True)
 
 
 def downgrade() -> None:
