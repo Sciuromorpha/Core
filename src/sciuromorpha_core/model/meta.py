@@ -1,5 +1,5 @@
 import uuid
-from sciuromorpha_core.db.base_class import Base
+from sciuromorpha_core.db.base_class import Base, SerializerMixin
 from sqlalchemy import Column, Identity
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer, String, JSON
@@ -8,7 +8,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import OID, UUID, BIT, ARRAY
 
 
-class Meta(Base):
+class Meta(Base, SerializerMixin):
     __tablename__ = "meta"
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
