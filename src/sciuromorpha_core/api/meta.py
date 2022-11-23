@@ -41,6 +41,11 @@ class Meta:
         # Try get meta for UPDATE
         with SessionFactory.begin() as session:
             meta = session.get(model.Meta, meta_id)
+
+            if meta is None:
+                # Cannot merge a none
+                return None
+
             clone_meta = copy.copy(meta.meta)
 
             # Not deep clone right now.
@@ -54,6 +59,7 @@ class Meta:
                         pass
 
             meta.meta = clone_meta
+            meta.origin_url = clone_meta.get("origin_url", None)
             with session.begin_nested():
                 session.add(meta)
 
