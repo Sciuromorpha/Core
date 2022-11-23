@@ -12,6 +12,7 @@ alembic = "^1.8.1"
 psycopg2-binary = "^2.9.5"
 fastapi = "^0.86.0"
 nameko = "^2.14.1"
+sqlalchemy-serializer = "^1.4.1"
 
 
 [build-system]
