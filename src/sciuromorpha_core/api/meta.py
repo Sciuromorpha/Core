@@ -195,7 +195,7 @@ class Meta:
         with SessionFactory.begin() as session:
             stmt = (
                 select(model.Meta)
-                .where(model.Meta.process_tag.notin_(tags))
+                .where(~model.Meta.process_tag.contains(tags))
                 .order_by(model.Meta.id)
                 .offset(offset)
                 .limit(limit)
