@@ -72,7 +72,10 @@ class Meta:
 
     @rpc
     def merge(
-        self, meta_id: Union[str, UUID], meta_data: dict, process_tag: Union[None, str]
+        self,
+        meta_id: Union[str, UUID],
+        meta_data: dict,
+        process_tag: Union[None, str] = None,
     ):
         with SessionFactory.begin() as session:
             # Try get meta for UPDATE
@@ -157,7 +160,7 @@ class Meta:
         return result
 
     @rpc
-    def get_by_origin_url(self, url: str)-> Union[model.Meta, None]:
+    def get_by_origin_url(self, url: str) -> Union[model.Meta, None]:
         with SessionFactory.begin() as session:
             meta = session.execute(
                 select(model.Meta).where(model.Meta.origin_url == url)
