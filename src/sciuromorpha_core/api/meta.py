@@ -32,7 +32,6 @@ class Meta:
     def merge_meta_data(cls, origin: dict, append: dict):
         # Merge append dict to origin.
         # Not deep merge right now.
-
         for key, value in append.items():
             if value is not None:
                 origin[key] = append[key]
@@ -148,19 +147,26 @@ class Meta:
         return result
 
     @rpc
-    def get_by_id(self, id: Union[str, UUID]):
+    def get_by_id(self, id: Union[str, UUID]) -> Union[model.Meta, None]:
         with SessionFactory.begin() as session:
             meta = session.get(model.Meta, id, options=(joinedload(model.Meta.tasks),))
-            return meta.to_dict(rules=("tasks",))
+            if meta is None:
+                return None
+            result = meta.to_dict(rules=("tasks",))
+
+        return result
 
     @rpc
-    def get_by_origin_url(self, url: str):
+    def get_by_origin_url(self, url: str)-> Union[model.Meta, None]:
         with SessionFactory.begin() as session:
             meta = session.execute(
                 select(model.Meta).where(model.Meta.origin_url == url)
             ).first()
+            if meta is None:
+                return None
+            result = meta.to_dict()
 
-        return meta.to_dict()
+        return result
 
     @rpc
     def query(query: Any, offset: int = 0, limit: int = 100):
