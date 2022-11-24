@@ -21,8 +21,8 @@ class Meta:
     def clone_meta_data(cls, meta: model.Meta):
         clone = copy.copy(meta.data)
 
+        # Ensure meta.data is dict.
         if not isinstance(clone, dict):
-            # Ensure this metadata is dict.
             clone = {S.META_KEY_STUB: clone} if clone is not None else {}
 
         return clone
@@ -169,9 +169,7 @@ class Meta:
 
     @rpc
     def query_by_process_tag(self, tags: list, offset: int = 0, limit: int = 100):
-        try:
-            iter(tags)
-        except TypeError:
+        if not isinstance(tags, list):
             tags = [tags]
 
         with SessionFactory.begin() as session:
@@ -191,9 +189,7 @@ class Meta:
 
     @rpc
     def query_without_process_tag(self, tags: list, offset: int = 0, limit: int = 100):
-        try:
-            iter(tags)
-        except TypeError:
+        if not isinstance(tags, list):
             tags = [tags]
 
         with SessionFactory.begin() as session:
