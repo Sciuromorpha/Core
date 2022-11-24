@@ -1,16 +1,21 @@
 import os
+import logging
 import configparser
+from . import static as S
 from xmlrpc.client import Boolean
+
+logging.basicConfig()
+logger = logging.getLogger("sciuromorpha.core")
 
 config = configparser.ConfigParser(allow_no_value=True, strict=True)
 
 # The DEFAULT configs.
 config.read_dict(
     {
-        "sciuromorpha": {
-            "mode": "development",
+        S.CONFIG_SECTION_SCIUROMORPHA: {
+            "mode": S.ENV_MODE_DEVELOPMENT,
         },
-        "db": {
+        S.CONFIG_SECTION_DATABASE: {
             "driver": "postgresql",
             "host": "localhost",
             "port": "5432",
@@ -22,7 +27,7 @@ config.read_dict(
 )
 
 # Try get environ variables.
-env_mode = os.environ.get("SCIUROMORPHA_MODE", "development")
+env_mode = os.environ.get(S.ENV_CONFIG_MODE, S.ENV_MODE_DEVELOPMENT)
 config_files = [
     f"../../../config.ini",
     f"../../../{env_mode}.ini",
@@ -36,17 +41,27 @@ config_files = [
     f"~/.config/sciuromorpha/{env_mode}.ini",
 ]
 
-if "SCIUROMORPHA_CONFIG" in os.environ:
-    config_files.append(os.environ.get("SCIUROMORPHA_CONFIG"))
+if S.ENV_CONFIG_FILE in os.environ:
+    config_files.append(os.environ.get(S.ENV_CONFIG_FILE))
 
-if "SCIUROMORPHA_CONFIG_FILES" in os.environ:
-    config_files += os.environ.get("SCIUROMORPHA_CONFIG_FILES").split(":")
+if S.ENV_CONFIG_FILES in os.environ:
+    config_files += os.environ.get(S.ENV_CONFIG_FILES).split(":")
 
 # Try to read config files.
 config_files = config.read(config_files)
 
+# Setup logger to INFO when mode is development.
+if env_mode == S.ENV_MODE_DEVELOPMENT:
+    logger.setLevel(logging.INFO)
+else:
+    logger.setLevel(logging.WARN)
+
+logger.info(
+    f"Loaded config files: {':'.join(config_files)}",
+)
+
 # Combine ENV variables.
-db_section = config["db"]
+db_section = config[S.CONFIG_SECTION_DATABASE]
 db_section.update(
     {
         key.removeprefix("POSTGRES_"): value
@@ -62,11 +77,11 @@ else:
 
 config.read_dict(
     {
-        "sciuromorpha": {
+        S.CONFIG_SECTION_SCIUROMORPHA: {
             "mode": env_mode,
             "config_files": config_files,
         },
-        "db": {
+        S.CONFIG_SECTION_DATABASE: {
             "url": db_url,
             "sqlalchemy.url": db_url,
         },
