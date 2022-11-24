@@ -21,7 +21,7 @@ class Meta:
     def clone_meta_data(cls, meta: model.Meta):
         clone = copy.copy(meta.data)
 
-        if clone is not dict:
+        if not isinstance(clone, dict):
             # Ensure this metadata is dict.
             clone = {S.META_KEY_STUB: clone} if clone is not None else {}
 
@@ -48,7 +48,7 @@ class Meta:
         try:
             result = set(meta.process_tag)
         except TypeError:
-            result = {meta.process_tag}
+            result = {meta.process_tag} if meta.process_tag is not None else set()
 
         return result
 
