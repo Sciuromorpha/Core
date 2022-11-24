@@ -6,6 +6,7 @@ from nameko.rpc import rpc
 from nameko.events import EventDispatcher
 
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import insert
 
 from sciuromorpha_core.db.session import SessionFactory
@@ -149,10 +150,8 @@ class Meta:
     @rpc
     def get_by_id(self, id: Union[str, UUID]):
         with SessionFactory.begin() as session:
-            # stmt = select(model.Meta).where(model.Meta.id == id)
-            # return session.execute(stmt).first()
-            meta = session.get(model.Meta, id)
-            return meta.to_dict()
+            meta = session.get(model.Meta, id, options=(joinedload(model.Meta.tasks),))
+            return meta.to_dict(rules=("tasks",))
 
     @rpc
     def get_by_origin_url(self, url: str):
@@ -180,12 +179,9 @@ class Meta:
                 .offset(offset)
                 .limit(limit)
             )
-            rows = session.execute(stmt)
-            result = []
-            for row in rows.scalars():
-                result.append(row.to_dict())
+            result = [row.to_dict() for row in session.execute(stmt).scalars()]
 
-            return result
+        return result
 
     @rpc
     def query_without_process_tag(self, tags: list, offset: int = 0, limit: int = 100):
@@ -200,9 +196,6 @@ class Meta:
                 .offset(offset)
                 .limit(limit)
             )
-            rows = session.execute(stmt)
-            result = []
-            for row in rows.scalars():
-                result.append(row.to_dict())
+            result = [row.to_dict() for row in session.execute(stmt).scalars()]
 
-            return result
+        return result
