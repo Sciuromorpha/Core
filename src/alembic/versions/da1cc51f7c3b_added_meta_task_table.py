@@ -19,7 +19,7 @@ depends_on = None
 def upgrade() -> None:
     op.create_table('meta',
     sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
-    sa.Column('meta', sa.JSON(none_as_null=True), nullable=True),
+    sa.Column('data', sa.JSON(none_as_null=True), nullable=True),
     sa.Column('origin_url', sa.String(), nullable=True),
     sa.Column('process_tag', postgresql.ARRAY(sa.String(), dimensions=1), nullable=True),
     sa.PrimaryKeyConstraint('id')

@@ -2,15 +2,14 @@ import copy
 from uuid import UUID
 from typing import Any, Union
 
-from nameko.rpc import rpc, RpcProxy
+from nameko.rpc import rpc
 from nameko.events import EventDispatcher
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm.exc import NoResultFound, MultipleResultsFound
 
 from sciuromorpha_core.db.session import SessionFactory
-from sciuromorpha_core import model
+from sciuromorpha_core import model, static as S
 
 
 class Meta:
@@ -19,13 +18,13 @@ class Meta:
     dispatch = EventDispatcher()
 
     @rpc
-    def create(self, metadata: dict):
+    def create(self, meta_data: dict):
         # Extract origin_url from meta.
         with SessionFactory.begin() as session:
             # stmt = insert(model.Meta).values(meta=metadata, origin_url=origin_url).on_conflict_do_nothing()
             # session.execute(stmt)
             meta = model.Meta(
-                meta=metadata, origin_url=metadata.get("origin_url", None)
+                data=meta_data, origin_url=meta_data.get(S.META_KEY_ORIGIN_URL, None)
             )
             with session.begin_nested():
                 session.add(meta)
@@ -46,9 +45,15 @@ class Meta:
                 # Cannot merge a none
                 return None
 
-            clone_meta = copy.copy(meta.meta)
+            clone_meta = copy.copy(meta.data)
 
-            # Not deep clone right now.
+            if clone_meta is not dict:
+                # Ensure this metadata is dict.
+                clone_meta = (
+                    {S.META_KEY_STUB: clone_meta} if clone_meta is not None else {}
+                )
+
+            # Not deep merge right now.
             for key, value in meta_data.items():
                 if value is not None:
                     clone_meta[key] = meta_data[key]
@@ -58,8 +63,8 @@ class Meta:
                     except KeyError:
                         pass
 
-            meta.meta = clone_meta
-            meta.origin_url = clone_meta.get("origin_url", None)
+            meta.data = clone_meta
+            meta.origin_url = clone_meta.get(S.META_KEY_ORIGIN_URL, None)
             with session.begin_nested():
                 session.add(meta)
 
