@@ -23,6 +23,14 @@ config.read_dict(
             "password": "",
             "db": "sciuromorpha",
         },
+        S.CONFIG_SECTION_MESSAGEQUEUE: {
+            "driver": "amqp",
+            "host": "localhost",
+            "port": "5672",
+            "user": "guest",
+            "password": "guest",
+            "path": "",
+        }
     }
 )
 
