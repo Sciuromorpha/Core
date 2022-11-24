@@ -21,7 +21,7 @@ class Meta:
     def create(self, meta_data: dict):
         # Extract origin_url from meta.
         with SessionFactory.begin() as session:
-            # stmt = insert(model.Meta).values(meta=metadata, origin_url=origin_url).on_conflict_do_nothing()
+            # stmt = insert(model.Meta).values(data=metadata, origin_url=origin_url).on_conflict_do_nothing()
             # session.execute(stmt)
             meta = model.Meta(
                 data=meta_data, origin_url=meta_data.get(S.META_KEY_ORIGIN_URL, None)
