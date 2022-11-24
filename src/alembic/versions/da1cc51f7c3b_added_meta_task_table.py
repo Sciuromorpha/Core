@@ -1,4 +1,4 @@
-"""Added meta/task table
+"""Create meta/task table
 
 Revision ID: da1cc51f7c3b
 Revises: 
