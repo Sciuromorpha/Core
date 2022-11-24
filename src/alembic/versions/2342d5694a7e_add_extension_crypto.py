@@ -1,4 +1,4 @@
-"""add extension crypto
+"""Add extension crypto
 
 Revision ID: 2342d5694a7e
 Revises: 50f16fff837a
