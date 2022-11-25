@@ -30,7 +30,7 @@ config.read_dict(
             "user": "guest",
             "password": "guest",
             "path": "",
-        }
+        },
     }
 )
 
@@ -83,6 +83,20 @@ if "url" in db_section:
 else:
     db_url = f'{db_section["driver"]}://{db_section["user"]}{":" if db_section["password"] else ""}{db_section["password"]}@{db_section["host"]}{":" if db_section["port"] else ""}{db_section["port"]}/{db_section["db"]}'
 
+mq_section = config[S.CONFIG_SECTION_MESSAGEQUEUE]
+mq_section.update(
+    {
+        key.removeprefix("RABBITMQ_"): value
+        for key, value in os.environ.items()
+        if key.startswith("RABBITMQ_")
+    }
+)
+
+if "url" in mq_section:
+    mq_url = mq_section["url"]
+else:
+    mq_url = f'{mq_section["driver"]}://{mq_section["user"]}{":" if mq_section["password"] else ""}{mq_section["password"]}@{mq_section["host"]}{":" if mq_section["port"] else ""}{mq_section["port"]}/{mq_section["path"]}'
+
 config.read_dict(
     {
         S.CONFIG_SECTION_SCIUROMORPHA: {
@@ -91,7 +105,10 @@ config.read_dict(
         },
         S.CONFIG_SECTION_DATABASE: {
             "url": db_url,
-            "sqlalchemy.url": db_url,
+            # "sqlalchemy.url": db_url,
+        },
+        S.CONFIG_SECTION_MESSAGEQUEUE: {
+            "url": mq_url,
         },
     }
 )
