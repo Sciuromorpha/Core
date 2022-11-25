@@ -9,8 +9,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import insert
 
-from sciuromorpha_core.db.session import SessionFactory
 from sciuromorpha_core import model, static as S
+from sciuromorpha_core.db.session import SessionFactory
 
 
 class Meta:
