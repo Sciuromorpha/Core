@@ -1,8 +1,8 @@
 import os
 import logging
 import configparser
+from pathlib import Path
 from . import static as S
-from xmlrpc.client import Boolean
 
 logging.basicConfig()
 logger = logging.getLogger("sciuromorpha.core")
@@ -14,6 +14,7 @@ config.read_dict(
     {
         S.CONFIG_SECTION_SCIUROMORPHA: {
             "mode": S.ENV_MODE_DEVELOPMENT,
+            "storage": "./storage",
         },
         S.CONFIG_SECTION_DATABASE: {
             "driver": "postgresql",
@@ -100,14 +101,19 @@ else:
 config.read_dict(
     {
         S.CONFIG_SECTION_SCIUROMORPHA: {
+            # Write env mode back.
             "mode": env_mode,
+            # Convert storage path to absolute Path object.
+            "storage": Path(config[S.CONFIG_SECTION_SCIUROMORPHA]["storage"]).absolute(),
+            # Add readed config file list.
             "config_files": config_files,
         },
         S.CONFIG_SECTION_DATABASE: {
+            # Write db url back to config.
             "url": db_url,
-            # "sqlalchemy.url": db_url,
         },
         S.CONFIG_SECTION_MESSAGEQUEUE: {
+            # Write message queue url back to config.
             "url": mq_url,
         },
     }
