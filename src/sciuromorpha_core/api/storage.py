@@ -9,6 +9,7 @@ class Storage:
         # Generate the service subfolder by the service metadata.
         pass
 
+    @rpc
     def get_document(self, meta_data: dict)->dict:
         # Calcute and return absoulate path for this metadata.
         dir(self)
