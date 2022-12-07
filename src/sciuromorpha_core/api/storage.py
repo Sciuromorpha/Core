@@ -16,7 +16,7 @@ class Storage:
     def get_service_path(self, service_meta: dict)->dict:
         # Generate the service subfolder by the service metadata.
         # Right now, we just create the service subfolder by the service name, and ignore the instance id.
-        logger.info("get_service_path", service_meta)
+        logger.info("get_service_path(%r)", service_meta)
         service_name = service_meta.get("name", None)
 
         if type(service_name) is not str:
