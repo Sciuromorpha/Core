@@ -4,7 +4,8 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from sciuromorpha_core import config as core_config
+from sciuromorpha_core import static as S, model
+from sciuromorpha_core.config import config as core_config
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -17,7 +18,6 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from sciuromorpha_core import model
 target_metadata = model.Base.metadata
 
 
@@ -34,7 +34,7 @@ def run_migrations_offline() -> None:
 
     """
     context.configure(
-        url=core_config["db"]["url"],
+        url=core_config[S.CONFIG_SECTION_DATABASE]["url"],
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -52,7 +52,8 @@ def run_migrations_online() -> None:
 
     """
     connectable = engine_from_config(
-        core_config["db"],
+        core_config[S.CONFIG_SECTION_DATABASE],
+        url=core_config[S.CONFIG_SECTION_DATABASE]["url"],
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
