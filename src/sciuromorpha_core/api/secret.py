@@ -15,7 +15,7 @@ class Secret:
     @rpc
     def put(self, service_meta: dict) -> int:
         # Insert or update secret data, and return id of the row.
-        
+
         # Params check.
         # TODO: Use schema or Pydantic to check.
         if (
@@ -41,16 +41,32 @@ class Secret:
         return result.returned_defaults[0]
 
     @rpc
-    def get(self, service_meta: dict) -> Union[dict, None]:
+    def get_by_id(self, secret_id: int) -> Union[dict, None]:
         with SessionFactory.begin() as session:
-            stmt = select(model.Secret).where(
-                model.Secret.service == service_meta["name"]
-                and model.Secret.key == service_meta["secret_key"]
-            )
+            secret = session.get(model.Secret, secret_id, with_for_update=False)
 
-            data = session.execute(stmt).first()
-
-            if data is None:
+            if secret is None:
                 return None
 
-        return data
+            result = secret.to_dict()
+
+        return result
+
+    @rpc
+    def get(self, service_meta: dict) -> Union[dict, None]:
+        # Fetch secret data by service name & secret key.
+
+        with SessionFactory.begin() as session:
+            stmt = select(model.Secret).where(
+                (model.Secret.service == service_meta["name"])
+                & (model.Secret.key == service_meta["secret_key"])
+            )
+
+            result = session.execute(stmt).scalar()
+
+            if result is None:
+                return None
+
+            result = result.to_dict()
+
+        return result
