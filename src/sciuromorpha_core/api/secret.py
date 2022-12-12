@@ -12,7 +12,7 @@ from sciuromorpha_core.exceptions import ArgumentMissingError
 class Secret:
     name = "secret"
 
-    @rpc
+    @rpc(sensitive_arguments=("service_meta.secret_data",))
     def put(self, service_meta: dict) -> int:
         # Insert or update secret data, and return id of the row.
 
