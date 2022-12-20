@@ -1,7 +1,7 @@
 from typing import Any, Union
 
 from nameko.rpc import rpc
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.dialects.postgresql import insert
 
 from sciuromorpha_core import model, static as S
@@ -12,25 +12,25 @@ from sciuromorpha_core.exceptions import ArgumentMissingError
 class Secret:
     name = "secret"
 
-    @rpc(sensitive_arguments=("service_meta.secret_data",))
-    def put(self, service_meta: dict) -> int:
+    @rpc(sensitive_arguments=("secret_meta.data",))
+    def put(self, secret_meta: dict) -> int:
         # Insert or update secret data, and return id of the row.
 
         # Params check.
         # TODO: Use schema or Pydantic to check.
         if (
-            service_meta.get("name", None) is None
-            or service_meta.get("secret_key", None) is None
+            secret_meta.get("name", None) is None
+            or secret_meta.get("key", None) is None
         ):
             raise ArgumentMissingError(
-                "service_meta need both name&secret_key exists and should not be None."
+                "secret_meta need both name&key exists and should not be None."
             )
 
         with SessionFactory.begin() as session:
-            data = service_meta.get("secret_data", None)
+            data = secret_meta.get("data", None)
             stmt = insert(model.Secret).values(
-                service=service_meta["name"],
-                key=service_meta["secret_key"],
+                service=secret_meta["name"],
+                key=secret_meta["key"],
                 data=data,
             )
             stmt = stmt.on_conflict_do_update(
@@ -53,13 +53,13 @@ class Secret:
         return result
 
     @rpc
-    def get(self, service_meta: dict) -> Union[dict, None]:
+    def get(self, secret_meta: dict) -> Union[dict, None]:
         # Fetch secret data by service name & secret key.
 
         with SessionFactory.begin() as session:
             stmt = select(model.Secret).where(
-                (model.Secret.service == service_meta["name"])
-                & (model.Secret.key == service_meta["secret_key"])
+                (model.Secret.service == secret_meta["name"])
+                & (model.Secret.key == secret_meta["key"])
             )
 
             result = session.execute(stmt).scalar()
@@ -70,3 +70,21 @@ class Secret:
             result = result.to_dict()
 
         return result
+
+    @rpc
+    def delete(self, secret_meta: dict) -> Union[dict, None]:
+        # Delete a secret data by service name @ secret key.
+        # It will return the content of row if it exist,
+        # Otherwise return none.
+        with SessionFactory.begin() as session:
+            stmt = delete(model.Secret).where(
+                (model.Secret.service == secret_meta["name"])
+                & (model.Secret.key == secret_meta["key"])
+            )
+
+            result = session.execute(stmt).scalar()
+
+            if result is None:
+                return result
+
+            return result.returned_defaults
