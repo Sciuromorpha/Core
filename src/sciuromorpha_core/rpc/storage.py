@@ -2,9 +2,6 @@ from uuid import UUID
 from typing import Any, Union
 from pathlib import Path
 
-from nameko.rpc import rpc
-from nameko.events import EventHandler, EventDispatcher
-
 import sciuromorpha_core.static as S
 from sciuromorpha_core.config import config, logger
 from sciuromorpha_core.exceptions import ArgumentTypeError
