@@ -1,9 +1,6 @@
 from uuid import UUID
 from typing import Any, Union
 
-from nameko.rpc import rpc
-from nameko.events import EventDispatcher
-
 from sciuromorpha_core import model, static as S
 from sciuromorpha_core.db.session import SessionFactory
 

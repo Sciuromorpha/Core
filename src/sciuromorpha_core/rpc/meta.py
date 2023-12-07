@@ -2,9 +2,6 @@ import copy
 from uuid import UUID
 from typing import Any, Union
 
-from nameko.rpc import rpc
-from nameko.events import EventDispatcher
-
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.dialects.postgresql import insert
@@ -15,8 +12,6 @@ from sciuromorpha_core.db.session import SessionFactory
 
 class Meta:
     name = "meta"
-
-    dispatch = EventDispatcher()
 
     @classmethod
     def clone_meta_data(cls, meta: model.Meta):
@@ -52,7 +47,6 @@ class Meta:
 
         return result
 
-    @rpc
     def create(self, meta_data: dict):
         # Extract origin_url from meta.
         with SessionFactory.begin() as session:
@@ -70,7 +64,6 @@ class Meta:
         self.dispatch("create", result)
         return result
 
-    @rpc
     def merge(
         self,
         meta_id: Union[str, UUID],
@@ -103,7 +96,6 @@ class Meta:
         self.dispatch("merge", result)
         return result
 
-    @rpc
     def add_process_tag(self, meta_id: Union[str, UUID], tag: str):
         with SessionFactory.begin() as session:
             # Try get meta for UPDATE
@@ -124,7 +116,6 @@ class Meta:
 
         return result
 
-    @rpc
     def remove_process_tag(self, meta_id: Union[str, UUID], tag: str):
         with SessionFactory.begin() as session:
             # Try get meta for UPDATE
@@ -149,7 +140,6 @@ class Meta:
 
         return result
 
-    @rpc
     def get_by_id(self, id: Union[str, UUID]) -> Union[model.Meta, None]:
         with SessionFactory.begin() as session:
             meta = session.get(model.Meta, id, options=(joinedload(model.Meta.tasks),))
@@ -159,7 +149,6 @@ class Meta:
 
         return result
 
-    @rpc
     def get_by_origin_url(self, url: str) -> Union[model.Meta, None]:
         with SessionFactory.begin() as session:
             meta = session.execute(
@@ -171,11 +160,10 @@ class Meta:
 
         return result
 
-    @rpc
     def query(query: Any, offset: int = 0, limit: int = 100):
         pass
 
-    @rpc
+
     def query_by_process_tag(self, tags: list, offset: int = 0, limit: int = 100):
         if not isinstance(tags, list):
             tags = [tags]
@@ -192,7 +180,7 @@ class Meta:
 
         return result
 
-    @rpc
+
     def query_without_process_tag(self, tags: list, offset: int = 0, limit: int = 100):
         if not isinstance(tags, list):
             tags = [tags]

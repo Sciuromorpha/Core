@@ -1,6 +1,5 @@
 from typing import Any, Union
 
-from nameko.rpc import rpc
 from sqlalchemy import select, delete
 from sqlalchemy.dialects.postgresql import insert
 
