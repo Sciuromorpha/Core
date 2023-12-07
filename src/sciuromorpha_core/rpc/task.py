@@ -8,9 +8,7 @@ from sciuromorpha_core.db.session import SessionFactory
 class Task:
     name = "task"
 
-    dispatch = EventDispatcher()
 
-    @rpc
     def create(
         self,
         worker: str,
@@ -31,7 +29,7 @@ class Task:
         self.dispatch("create", result)
         return result
 
-    @rpc
+
     def update(
         self,
         task_id: Union[str, UUID],
@@ -65,7 +63,7 @@ class Task:
         self.dispatch("update", result)
         return result
 
-    @rpc
+
     def remove(self, task_id: Union[str, UUID, list]):
         with SessionFactory.begin() as session:
             if isinstance(task_id, (str, UUID,)):
@@ -76,6 +74,6 @@ class Task:
                 # Delete tasks by ID.
                 pass
 
-    @rpc
+
     def clean_finished(self):
         pass
