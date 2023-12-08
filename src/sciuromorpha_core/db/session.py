@@ -13,7 +13,7 @@ async def connect_db(
         settings: Settings = Context()):
     logger.debug("connect_db in db/session.py")
 
-    if settings.core.get("mode", "") == S.ENV_MODE_DEVELOPMENT:
+    if settings.service_mode == S.ENV_MODE_DEVELOPMENT:
         # Let sqlalchemy log every SQL in development mode.
         import logging
 
