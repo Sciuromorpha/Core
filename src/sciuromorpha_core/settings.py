@@ -1,3 +1,4 @@
+from sciuromorpha_core import static as S
 from pydantic import (
     AliasChoices,
     AmqpDsn,
@@ -5,10 +6,12 @@ from pydantic import (
     PostgresDsn,
     RedisDsn,
 )
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict()
+
     mq: AmqpDsn = Field(
         "amqp://guest:guest@localhost:5672/",
         validation_alias=AliasChoices(
@@ -22,3 +25,4 @@ class Settings(BaseSettings):
         "redis://user:pass@localhost:6379/1",
         validation_alias=AliasChoices("redis_url"),
     )
+    service_name: str = "core"
