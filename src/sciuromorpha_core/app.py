@@ -30,7 +30,7 @@ async def connect_db(
 @app.on_startup
 async def connect_mq(settings: Settings = Context()):
     # Everything is OK, let's connect to mq and start service.
-    await broker.connect(settings.mq)
+    await broker.connect(str(settings.mq))
 
 
 @app.after_startup
