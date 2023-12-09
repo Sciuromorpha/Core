@@ -1,79 +1,97 @@
 from uuid import UUID
 from typing import Any, Union
 
-from sciuromorpha_core import model, static as S
-from sciuromorpha_core.db.session import SessionFactory
+from faststream.rabbit.annotations import (
+    Logger,
+    Context,
+    ContextRepo,
+    RabbitMessage,
+    RabbitBroker as BrokerAnnotation,
+    RabbitProducer,
+)
+from sqlalchemy.orm import joinedload, sessionmaker
+
+from sciuromorpha_core import model
+from sciuromorpha_core.app import app, broker
+from .mq_schema import task_rpc, task_topic
 
 
-class Task:
-    name = "task"
+@broker.subscriber("create", task_rpc)
+@broker.publisher(routing_key="task.created", exchange=task_topic)
+async def create(
+    worker: str,
+    param: Any = None,
+    meta_id: Union[str, UUID, None] = None,
+    status: str = "pending",
+    db_session: sessionmaker = Context(),
+) -> dict:
+    with db_session.begin() as session:
+        task = model.Task(worker=worker, param=param, meta_id=meta_id, status=status)
+
+        with session.begin_nested():
+            session.add(task)
+
+        result = task.to_dict()
+
+    return result
 
 
-    def create(
-        self,
-        worker: str,
-        param: Any = None,
-        meta_id: Union[str, UUID, None] = None,
-        status: str = "pending",
-    ) -> dict:
-        with SessionFactory.begin() as session:
-            task = model.Task(
-                worker=worker, param=param, meta_id=meta_id, status=status
-            )
+@broker.subscriber("update", task_rpc)
+async def update(
+    task_id: Union[str, UUID],
+    broker: BrokerAnnotation,
+    worker: str = None,
+    param: Any = None,
+    meta_id: Union[str, UUID, None] = None,
+    status: str = "pending",
+    db_session: sessionmaker = Context(),
+) -> Union[None, dict]:
+    with db_session.begin() as session:
+        task = session.get(model.Task, task_id)
 
-            with session.begin_nested():
-                session.add(task)
+        if task is None:
+            return None
 
-            result = task.to_dict()
+        if worker is not None:
+            task.worker = worker
 
-        self.dispatch("create", result)
-        return result
+        if param is not None:
+            task.param = param
 
+        if meta_id is not None:
+            task.meta_id = meta_id
 
-    def update(
-        self,
-        task_id: Union[str, UUID],
-        worker: str = None,
-        param: Any = None,
-        meta_id: Union[str, UUID, None] = None,
-        status: str = "pending",
-    ) -> Union[None, dict]:
-        with SessionFactory.begin() as session:
-            task = session.get(model.Task, task_id)
+        task.status = status
 
-            if task is None:
-                return None
+        with session.begin_nested():
+            session.add(task)
 
-            if worker is not None:
-                task.worker = worker 
-            
-            if param is not None:
-                task.param = param
+        result = task.to_dict()
 
-            if meta_id is not None:
-                task.meta_id = meta_id
-
-            task.status = status
-
-            with session.begin_nested():
-                session.add(task)
-
-            result = task.to_dict()
-
-        self.dispatch("update", result)
-        return result
+    broker.publish(message=result, routing_key="task.updated", exchange=task_topic)
+    return result
 
 
-    def remove(self, task_id: Union[str, UUID, list]):
-        with SessionFactory.begin() as session:
-            if isinstance(task_id, (str, UUID,)):
-                # Delete one task by ID.
-                pass
+@broker.subscriber("remove", task_rpc)
+async def remove(
+    task_id: Union[str, UUID, list],
+    db_session: sessionmaker = Context(),
+):
+    with db_session.begin() as session:
+        if isinstance(
+            task_id,
+            (
+                str,
+                UUID,
+            ),
+        ):
+            # Delete one task by ID.
+            pass
 
-            elif isinstance(task_id, list):
-                # Delete tasks by ID.
-                pass
+        elif isinstance(task_id, list):
+            # Delete tasks by ID.
+            pass
 
 
-    def clean_finished(self):
-        pass
+async def clean_task():
+    pass

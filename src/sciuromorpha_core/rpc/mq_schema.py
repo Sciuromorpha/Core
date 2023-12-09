@@ -5,6 +5,11 @@ meta_rpc = RabbitExchange("meta-rpc", type=ExchangeType.DIRECT)
 
 meta_topic = RabbitExchange("meta-broadcast", type=ExchangeType.TOPIC)
 
+# For task rpc
+task_rpc = RabbitExchange("task-rpc", type=ExchangeType.DIRECT)
+
+task_topic = RabbitExchange("task-broadcast", type=ExchangeType.TOPIC)
+
 # For secret rpc
 secret_rpc_exchange = RabbitExchange("secret-rpc", type=ExchangeType.DIRECT)
 

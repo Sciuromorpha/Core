@@ -17,8 +17,6 @@ from sqlalchemy.orm import sessionmaker
 async def connect_db(
     context: ContextRepo, logger: Logger, settings: Settings = Context()
 ):
-    logger.debug("connect_db in db/session.py")
-
     if settings.service_mode == S.ENV_MODE_DEVELOPMENT:
         # Let sqlalchemy log every SQL in development mode.
         import logging
@@ -27,32 +25,33 @@ async def connect_db(
 
     from sqlalchemy import create_engine
 
-    engine = create_engine(settings.db, pool_pre_ping=True, future=True)
-    SessionFactory = sessionmaker(
-        autocommit=False, autoflush=False, bind=engine, future=True
+    db_engine = create_engine(str(settings.db), pool_pre_ping=True, future=True)
+    db_session = sessionmaker(
+        autocommit=False, autoflush=False, bind=db_engine, future=True
     )
 
-    context.set_global("db_engine", engine)
-    context.set_global("db_session", SessionFactory)
+    context.set_global("db_engine", db_engine)
+    context.set_global("db_session", db_session)
+    logger.info("db connected.")
 
 
-@app.before_shutdown
+@app.on_shutdown
 async def disconnect_db(
     context: ContextRepo,
     logger: Logger,
-    engine: Engine = Context(),
+    db_engine: Engine = Context(),
     db_session: sessionmaker = Context(),
 ):
     logger.debug("disconnect_db in db/session.py")
 
     if db_session:
-        context.set_global("db_session", None)
+        context.reset_global("db_session")
         db_session.close_all()
         logger.debug("SessionFactory closed.")
 
-    if engine:
-        context.set_global("db_engine", None)
-        engine.dispose()
+    if db_engine:
+        context.reset_global("db_engine")
+        db_engine.dispose()
         logger.debug("Engine disposed.")
 
-    logger.debug("disconnect_db done.")
+    logger.info("disconnect_db done.")
