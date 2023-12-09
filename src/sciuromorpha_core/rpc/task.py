@@ -12,6 +12,7 @@ from faststream.rabbit.annotations import (
 from sqlalchemy.orm import joinedload, sessionmaker
 
 from sciuromorpha_core import model
+from sciuromorpha_core.db import session
 from sciuromorpha_core.app import app, broker
 from .mq_schema import task_rpc, task_topic
 
