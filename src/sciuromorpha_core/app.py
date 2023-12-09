@@ -19,14 +19,10 @@ app_id = str(uuid4())
 
 
 @app.on_startup
-async def setup(context: ContextRepo, env: str = ".env"):
+async def setup(context: ContextRepo, logger: Logger, env: str = ".env"):
     settings = Settings(_env_file=os.environ.get(S.ENV_DOT_FILE, env))
     context.set_global("settings", settings)
 
-
-@app.on_startup
-async def connect_mq(logger: Logger, settings: Settings = Context()):
-    # Everything is OK, let's connect to mq and start service.
     await broker.connect(str(settings.mq))
     logger.debug("connect to mq success")
 
