@@ -13,13 +13,12 @@ from faststream.rabbit.annotations import (
     RabbitMessage,
     RabbitBroker as BrokerAnnotation,
     RabbitProducer,
-    NoCast,
 )
 
-import sciuromorpha_core.db
 from sciuromorpha_core import model, static as S
+from sciuromorpha_core.db import session
 from sciuromorpha_core.app import app, broker
-from . import mq_schema as RMQ
+from .mq_schema import meta_rpc, meta_topic
 
 
 def clone_meta_data(meta: model.Meta):
@@ -56,8 +55,8 @@ def clone_process_tag(meta: model.Meta):
     return result
 
 
-@broker.subscriber("create", RMQ.meta_rpc)
-@broker.publisher(routing_key="meta.created", exchange=RMQ.meta_topic)
+@broker.subscriber("create", meta_rpc)
+@broker.publisher(routing_key="meta.created", exchange=meta_topic)
 def create(
     meta: dict[str, Any],
     process_tag: list[str] = [],
@@ -78,7 +77,7 @@ def create(
     return meta.to_dict()
 
 
-@broker.subscriber("merge", RMQ.meta_rpc)
+@broker.subscriber("merge", meta_rpc)
 def merge(
     meta_id: Union[str, UUID],
     meta: dict,
@@ -108,11 +107,11 @@ def merge(
 
     result = meta.to_dict()
     # Only publish to topic when update success.
-    broker.publish(message=result, routing_key="meta.updated", exchange=RMQ.meta_topic)
+    broker.publish(message=result, routing_key="meta.updated", exchange=meta_topic)
     return result
 
 
-@broker.subscriber("addtag", RMQ.meta_rpc)
+@broker.subscriber("addtag", meta_rpc)
 def add_process_tag(
     meta_id: Union[str, UUID],
     tag: str,
@@ -136,7 +135,7 @@ def add_process_tag(
     return meta.to_dict()
 
 
-@broker.subscriber("removetag", RMQ.meta_rpc)
+@broker.subscriber("removetag", meta_rpc)
 def remove_process_tag(
     meta_id: Union[str, UUID],
     tag: str,
@@ -166,7 +165,7 @@ def remove_process_tag(
     return result
 
 
-@broker.subscriber("get-by-id", RMQ.meta_rpc)
+@broker.subscriber("get-by-id", meta_rpc)
 def get_by_id(
     id: Union[str, UUID],
     with_tasks: bool = False,
@@ -187,7 +186,7 @@ def get_by_id(
     return result
 
 
-@broker.subscriber("get-by-url", RMQ.meta_rpc)
+@broker.subscriber("get-by-url", meta_rpc)
 def get_by_origin_url(
     url: str,
     db_session: sessionmaker = Context(),
@@ -203,7 +202,7 @@ def get_by_origin_url(
     return meta.to_dict()
 
 
-@broker.subscriber("query-by-tag", RMQ.meta_rpc)
+@broker.subscriber("query-by-tag", meta_rpc)
 def query_by_process_tag(
     tags: Union[str, list[str]],
     offset: int = 0,
@@ -226,7 +225,7 @@ def query_by_process_tag(
     return result
 
 
-@broker.subscriber("query-without-tag", RMQ.meta_rpc)
+@broker.subscriber("query-without-tag", meta_rpc)
 def query_without_process_tag(
     tags: Union[str, list[str]],
     offset: int = 0,
