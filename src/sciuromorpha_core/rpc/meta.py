@@ -7,12 +7,19 @@ from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 
 from faststream.rabbit.annotations import (
-    Logger, Context, ContextRepo, RabbitMessage,
-    RabbitBroker as BrokerAnnotation, RabbitProducer, NoCast,
+    Logger,
+    Context,
+    ContextRepo,
+    RabbitMessage,
+    RabbitBroker as BrokerAnnotation,
+    RabbitProducer,
+    NoCast,
 )
 
+import sciuromorpha_core.db
 from sciuromorpha_core import model, static as S
-from sciuromorpha_core.app import broker
+from sciuromorpha_core.app import app, broker
+from . import mq_schema as RMQ
 
 
 def clone_meta_data(meta: model.Meta):
@@ -44,15 +51,16 @@ def clone_process_tag(meta: model.Meta):
     try:
         result = set(meta.process_tag)
     except TypeError:
-        result = {meta.process_tag} if meta.process_tag is not None else set()
+        result = set([meta.process_tag]) if meta.process_tag is not None else set()
 
     return result
 
 
-@broker.subscriber("core-meta-create")
-@broker.publisher("meta-created")
+@broker.subscriber("create", RMQ.meta_rpc)
+@broker.publisher(routing_key="meta.created", exchange=RMQ.meta_topic)
 def create(
-    meta: dict,
+    meta: dict[str, Any],
+    process_tag: list[str] = [],
     db_session: sessionmaker = Context(),
 ):
     # Extract origin_url from meta.
@@ -60,7 +68,9 @@ def create(
         # stmt = insert(model.Meta).values(data=metadata, origin_url=origin_url).on_conflict_do_nothing()
         # session.execute(stmt)
         meta = model.Meta(
-            data=meta, origin_url=meta.get(S.META_KEY_ORIGIN_URL, None)
+            data=meta,
+            origin_url=meta.get(S.META_KEY_ORIGIN_URL, None),
+            process_tag=process_tag,
         )
         with session.begin_nested():
             session.add(meta)
@@ -68,11 +78,11 @@ def create(
     return meta.to_dict()
 
 
-@broker.subscriber("core-meta-merge")
-@broker.publisher("meta-updated")
+@broker.subscriber("merge", RMQ.meta_rpc)
 def merge(
     meta_id: Union[str, UUID],
     meta: dict,
+    broker: BrokerAnnotation,
     process_tag: Union[None, str] = None,
     db_session: sessionmaker = Context(),
 ):
@@ -81,7 +91,7 @@ def merge(
         meta = session.get(model.Meta, meta_id, with_for_update=True)
 
         if meta is None:
-            # Cannot merge to not exist meta
+            # Cannot merge to None
             return None
 
         clone_meta = clone_meta_data(meta)
@@ -96,12 +106,16 @@ def merge(
         with session.begin_nested():
             session.add(meta)
 
-    return meta.to_dict()
+    result = meta.to_dict()
+    # Only publish to topic when update success.
+    broker.publish(message=result, routing_key="meta.updated", exchange=RMQ.meta_topic)
+    return result
 
 
-@broker.subscriber("core-meta-addtag")
+@broker.subscriber("addtag", RMQ.meta_rpc)
 def add_process_tag(
-    meta_id: Union[str, UUID], tag: str,
+    meta_id: Union[str, UUID],
+    tag: str,
     db_session: sessionmaker = Context(),
 ):
     with db_session.begin() as session:
@@ -122,10 +136,12 @@ def add_process_tag(
     return meta.to_dict()
 
 
-@broker.subscriber("core-meta-removetag")
-def remove_process_tag(meta_id: Union[str, UUID], tag: str,
-                       db_session: sessionmaker = Context(),
-                       ):
+@broker.subscriber("removetag", RMQ.meta_rpc)
+def remove_process_tag(
+    meta_id: Union[str, UUID],
+    tag: str,
+    db_session: sessionmaker = Context(),
+):
     with db_session.begin() as session:
         # Try get meta for UPDATE
         meta = session.get(model.Meta, meta_id, with_for_update=True)
@@ -150,7 +166,7 @@ def remove_process_tag(meta_id: Union[str, UUID], tag: str,
     return result
 
 
-@broker.subscriber("core-meta-get-byid")
+@broker.subscriber("get-by-id", RMQ.meta_rpc)
 def get_by_id(
     id: Union[str, UUID],
     with_tasks: bool = False,
@@ -158,8 +174,7 @@ def get_by_id(
 ) -> Union[model.Meta, None]:
     with db_session.begin() as session:
         if with_tasks:
-            meta = session.get(model.Meta, id, options=(
-                joinedload(model.Meta.tasks),))
+            meta = session.get(model.Meta, id, options=(joinedload(model.Meta.tasks),))
             if meta is None:
                 return None
             result = meta.to_dict(rules=("tasks",))
@@ -172,29 +187,28 @@ def get_by_id(
     return result
 
 
-@broker.subscriber("core-meta-get-byurl")
+@broker.subscriber("get-by-url", RMQ.meta_rpc)
 def get_by_origin_url(
     url: str,
     db_session: sessionmaker = Context(),
-
 ) -> Union[model.Meta, None]:
     with db_session.begin() as session:
         meta = session.execute(
             select(model.Meta).where(model.Meta.origin_url == url)
         ).first()
-        if meta is None:
-            return None
-        result = meta.to_dict()
 
-    return result
+    if meta is None:
+        return None
+
+    return meta.to_dict()
 
 
-@broker.subscriber("core-meta-query-bytag")
+@broker.subscriber("query-by-tag", RMQ.meta_rpc)
 def query_by_process_tag(
-    tags: [str, list],
-    offset: int = 0, limit: int = 100,
+    tags: Union[str, list[str]],
+    offset: int = 0,
+    limit: int = 100,
     db_session: sessionmaker = Context(),
-
 ) -> list:
     if not isinstance(tags, list):
         tags = [tags]
@@ -212,9 +226,11 @@ def query_by_process_tag(
     return result
 
 
-@broker.subscriber("core-meta-query-withouttag")
+@broker.subscriber("query-without-tag", RMQ.meta_rpc)
 def query_without_process_tag(
-    tags: [str, list], offset: int = 0, limit: int = 100,
+    tags: Union[str, list[str]],
+    offset: int = 0,
+    limit: int = 100,
     db_session: sessionmaker = Context(),
 ):
     if not isinstance(tags, list):
