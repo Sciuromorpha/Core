@@ -18,3 +18,6 @@ ENV_MODE_TEST = "test"
 # Meta data keys.
 META_KEY_STUB = "_"
 META_KEY_ORIGIN_URL = "origin_url"
+
+SERVICE_STATUS_ONLINE = "online"
+SERVICE_STATUS_OFFLINE = "offline"

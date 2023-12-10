@@ -1,5 +1,10 @@
 from faststream.rabbit import RabbitExchange, RabbitQueue, ExchangeType
 
+# For service status broadcast
+service_status = RabbitExchange(
+    "service-status", type=ExchangeType.TOPIC, durable=True, auto_delete=False
+)
+
 # For meta rpc
 meta_rpc = RabbitExchange(
     "meta-rpc", type=ExchangeType.DIRECT, durable=True, auto_delete=False
@@ -21,9 +26,4 @@ task_topic = RabbitExchange(
 # For secret rpc
 secret_rpc = RabbitExchange(
     "secret-rpc", type=ExchangeType.DIRECT, durable=True, auto_delete=False
-)
-
-# For storage rpc
-storage_rpc = RabbitExchange(
-    "storage-rpc", type=ExchangeType.DIRECT, durable=True, auto_delete=False
 )
