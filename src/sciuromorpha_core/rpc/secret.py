@@ -16,7 +16,7 @@ from sciuromorpha_core import model
 from sciuromorpha_core.db import session
 from sciuromorpha_core.app import app, broker
 from sciuromorpha_core.exceptions import ArgumentMissingError
-from .mq_schema import secret_rpc
+from sciuromorpha_core.mq_schema import secret_rpc
 
 
 @broker.subscriber("put", secret_rpc)
