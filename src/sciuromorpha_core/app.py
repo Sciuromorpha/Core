@@ -1,7 +1,5 @@
 import os
 from uuid import uuid4
-from sciuromorpha_core import static as S
-from sciuromorpha_core import Settings
 from faststream import FastStream, Context
 from faststream.rabbit import RabbitBroker
 from faststream.rabbit.annotations import (
@@ -10,16 +8,20 @@ from faststream.rabbit.annotations import (
     RabbitMessage,
     RabbitBroker as BrokerAnnotation,
     RabbitProducer,
-    NoCast,
 )
+
+from sciuromorpha_core import S, Settings
+from sciuromorpha_core.mq_schema import service_status
 
 broker = RabbitBroker()
 app = FastStream(broker)
-app_id = str(uuid4())
 
 
 @app.on_startup
 async def setup(context: ContextRepo, logger: Logger, env: str = ".env"):
+    service_id = str(uuid4())
+    context.set_global("service_id", service_id)
+
     settings = Settings(_env_file=os.environ.get(S.ENV_DOT_FILE, env))
     context.set_global("settings", settings)
 
@@ -31,14 +33,18 @@ async def setup(context: ContextRepo, logger: Logger, env: str = ".env"):
 async def publish_online(
     logger: Logger,
     broker: BrokerAnnotation,
+    service_id: str = Context(),
+    settings: Settings = Context(),
 ):
     # Publish online message to broker.
     await broker.publish(
         {
-            "status": "ONLINE",
-            "app_id": app_id,
+            "service": settings.service_name,
+            "status": S.SERVICE_STATUS_ONLINE,
+            "service_id": service_id,
         },
-        queue="service-core",
+        routing_key="service.core",
+        exchange=service_status,
     )
     logger.info("Core service startup success.")
 
@@ -47,13 +53,17 @@ async def publish_online(
 async def publish_offline(
     logger: Logger,
     broker: BrokerAnnotation,
+    service_id: str = Context(),
+    settings: Settings = Context(),
 ):
     # Publish online message to broker.
     await broker.publish(
         {
-            "status": "OFFLINE",
-            "app_id": app_id,
+            "service": settings.service_name,
+            "status": S.SERVICE_STATUS_OFFLINE,
+            "service_id": service_id,
         },
-        queue="service-core",
+        routing_key="service.core",
+        exchange=service_status,
     )
-    logger.info("Core service startup success.")
+    logger.info("Core service shutdown success.")
