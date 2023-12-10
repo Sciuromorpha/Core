@@ -7,12 +7,8 @@ from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 
 from faststream.rabbit.annotations import (
-    Logger,
     Context,
-    ContextRepo,
-    RabbitMessage,
-    RabbitBroker as BrokerAnnotation,
-    RabbitProducer,
+    RabbitBroker,
 )
 
 from sciuromorpha_core import model, static as S
@@ -81,7 +77,7 @@ def create(
 def merge(
     meta_id: Union[str, UUID],
     meta: dict,
-    broker: BrokerAnnotation,
+    broker: RabbitBroker,
     process_tag: Union[None, str] = None,
     db_session: sessionmaker = Context(),
 ):
