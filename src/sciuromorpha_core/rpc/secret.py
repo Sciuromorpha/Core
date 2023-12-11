@@ -4,77 +4,62 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 from faststream.rabbit.annotations import (
-    Logger,
     Context,
-    ContextRepo,
-    RabbitMessage,
-    RabbitBroker as BrokerAnnotation,
-    RabbitProducer,
 )
 
 from sciuromorpha_core import model
 from sciuromorpha_core.db import session
 from sciuromorpha_core.app import app, broker
-from sciuromorpha_core.exceptions import ArgumentMissingError
 from sciuromorpha_core.mq_schema import secret_rpc
 
 
 @broker.subscriber("secret.put", secret_rpc)
 async def put(
-    secret_meta: dict,
+    service: str,
+    key: str,
+    data: Any,
     db_session: sessionmaker = Context(),
 ) -> int:
     # Insert or update secret data, and return id of the row.
-
-    # Params check.
-    # TODO: Use schema or Pydantic to check.
-    if secret_meta.get("name", None) is None or secret_meta.get("key", None) is None:
-        raise ArgumentMissingError(
-            "secret_meta need both name&key exists and should not be None."
-        )
-
     with db_session.begin() as session:
-        data = secret_meta.get("data", None)
         stmt = insert(model.Secret).values(
-            service=secret_meta["name"],
-            key=secret_meta["key"],
+            service=service,
+            key=key,
             data=data,
         )
         stmt = stmt.on_conflict_do_update(
             index_elements=["service", "key"], set_=dict(data=stmt.excluded.data)
         )
-        result = session.execute(stmt)
 
-    return result.returned_defaults[0]
+        result = session.execute(stmt)
+        return result.returned_defaults[0]
 
 
 @broker.subscriber("secret.get-by-id", secret_rpc)
 async def get_by_id(
-    secret_id: int,
+    id: int,
     db_session: sessionmaker = Context(),
 ) -> Union[dict, None]:
     with db_session.begin() as session:
-        secret = session.get(model.Secret, secret_id, with_for_update=False)
+        secret = session.get(model.Secret, id, with_for_update=False)
 
         if secret is None:
             return None
 
-        result = secret.to_dict()
-
-    return result
+        return secret.to_dict()
 
 
 @broker.subscriber("secret.get", secret_rpc)
 async def get(
-    secret_meta: dict[str, str],
+    service: str,
+    key: str,
     db_session: sessionmaker = Context(),
 ) -> Union[dict, None]:
     # Fetch secret data by service name & secret key.
 
     with db_session.begin() as session:
         stmt = select(model.Secret).where(
-            (model.Secret.service == secret_meta["name"])
-            & (model.Secret.key == secret_meta["key"])
+            (model.Secret.service == service) & (model.Secret.key == key)
         )
 
         result = session.execute(stmt).scalar()
@@ -82,28 +67,25 @@ async def get(
         if result is None:
             return None
 
-        result = result.to_dict()
-
-    return result
+        return result.to_dict()
 
 
 @broker.subscriber("secret.delete", secret_rpc)
-async def delete(
-    secret_meta: dict,
+async def secret_delete(
+    service: str,
+    key: str,
     db_session: sessionmaker = Context(),
-) -> Union[dict, None]:
+) -> Any:
     # Delete a secret data by service name @ secret key.
-    # It will return the content of row if it exist,
+    # It will return the content of data if it exist,
     # Otherwise return none.
     with db_session.begin() as session:
-        stmt = delete(model.Secret).where(
-            (model.Secret.service == secret_meta["name"])
-            & (model.Secret.key == secret_meta["key"])
+        stmt = (
+            delete(model.Secret)
+            .where((model.Secret.service == service) & (model.Secret.key == key))
+            .returning(model.Secret.data)
         )
 
         result = session.execute(stmt).scalar()
 
-        if result is None:
-            return result
-
-        return result.returned_defaults
+        return result
