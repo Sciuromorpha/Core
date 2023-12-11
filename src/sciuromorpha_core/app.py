@@ -18,7 +18,9 @@ app = FastStream(broker)
 
 
 @app.on_startup
-async def setup(context: ContextRepo, logger: Logger, env: str = ".env"):
+async def setup(
+    broker: BrokerAnnotation, context: ContextRepo, logger: Logger, env: str = ".env"
+):
     service_id = str(uuid4())
     context.set_global("service_id", service_id)
 
