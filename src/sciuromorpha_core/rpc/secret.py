@@ -19,7 +19,7 @@ from sciuromorpha_core.exceptions import ArgumentMissingError
 from sciuromorpha_core.mq_schema import secret_rpc
 
 
-@broker.subscriber("put", secret_rpc)
+@broker.subscriber("secret.put", secret_rpc)
 async def put(
     secret_meta: dict,
     db_session: sessionmaker = Context(),
@@ -48,7 +48,7 @@ async def put(
     return result.returned_defaults[0]
 
 
-@broker.subscriber("get-by-id", secret_rpc)
+@broker.subscriber("secret.get-by-id", secret_rpc)
 async def get_by_id(
     secret_id: int,
     db_session: sessionmaker = Context(),
@@ -64,7 +64,7 @@ async def get_by_id(
     return result
 
 
-@broker.subscriber("get", secret_rpc)
+@broker.subscriber("secret.get", secret_rpc)
 async def get(
     secret_meta: dict[str, str],
     db_session: sessionmaker = Context(),
@@ -87,7 +87,7 @@ async def get(
     return result
 
 
-@broker.subscriber("delete", secret_rpc)
+@broker.subscriber("secret.delete", secret_rpc)
 async def delete(
     secret_meta: dict,
     db_session: sessionmaker = Context(),

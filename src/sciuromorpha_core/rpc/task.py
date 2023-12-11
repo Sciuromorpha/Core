@@ -17,7 +17,7 @@ from sciuromorpha_core.app import app, broker
 from sciuromorpha_core.mq_schema import task_rpc, task_topic
 
 
-@broker.subscriber("create", task_rpc)
+@broker.subscriber("task.create", task_rpc)
 @broker.publisher(routing_key="task.created", exchange=task_topic)
 async def create(
     worker: str,
@@ -37,7 +37,7 @@ async def create(
     return result
 
 
-@broker.subscriber("update", task_rpc)
+@broker.subscriber("task.update", task_rpc)
 async def update(
     task_id: Union[str, UUID],
     broker: BrokerAnnotation,
@@ -73,7 +73,7 @@ async def update(
     return result
 
 
-@broker.subscriber("remove", task_rpc)
+@broker.subscriber("task.remove", task_rpc)
 async def remove(
     task_id: Union[str, UUID, list],
     db_session: sessionmaker = Context(),
