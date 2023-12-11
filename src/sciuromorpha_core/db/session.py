@@ -1,3 +1,4 @@
+import sys
 from sciuromorpha_core import S, Settings, app
 from faststream import FastStream, Context
 from faststream.rabbit.annotations import (
@@ -21,7 +22,9 @@ async def connect_db(
         # Let sqlalchemy log every SQL in development mode.
         import logging
 
-        logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+        sqlalchemy_logger = logging.getLogger("sqlalchemy.engine")
+        sqlalchemy_logger.setLevel(logging.INFO)
+        sqlalchemy_logger.addHandler(logging.StreamHandler(sys.stdout))
 
     from sqlalchemy import create_engine
 
