@@ -36,6 +36,10 @@ async def publish_online(
     service_id: str = Context(),
     settings: Settings = Context(),
 ):
+    # Ensure service status exchange exists.
+    await broker.declare_exchange(service_status)
+    logger.debug("declare service status exchange success")
+
     # Publish online message to broker.
     await broker.publish(
         {
