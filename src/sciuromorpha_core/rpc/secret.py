@@ -58,8 +58,10 @@ async def get(
     # Fetch secret data by service name & secret key.
 
     with db_session.begin() as session:
-        stmt = select(model.Secret).where(
-            (model.Secret.service == service) & (model.Secret.key == key)
+        stmt = (
+            select(model.Secret)
+            .where((model.Secret.service == service) & (model.Secret.key == key))
+            .limit(1)
         )
 
         result = session.execute(stmt).scalar()

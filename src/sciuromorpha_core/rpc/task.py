@@ -99,9 +99,9 @@ async def get_one(
 ) -> Union[dict, None]:
     with db_session.begin() as session:
         task = session.execute(
-            select(model.Task).where(
-                (model.Task.worker == worker) & (model.Task.status == status)
-            )
+            select(model.Task)
+            .where((model.Task.worker == worker) & (model.Task.status == status))
+            .limit(1)
         ).first()
 
         if task is None:
