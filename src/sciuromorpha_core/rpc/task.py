@@ -1,6 +1,9 @@
 from uuid import UUID
 from typing import Any, Union
 
+from sqlalchemy import select, delete
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import joinedload, sessionmaker
 from faststream.rabbit.annotations import (
     Logger,
     Context,
@@ -9,7 +12,6 @@ from faststream.rabbit.annotations import (
     RabbitBroker as BrokerAnnotation,
     RabbitProducer,
 )
-from sqlalchemy.orm import joinedload, sessionmaker
 
 from sciuromorpha_core import model
 from sciuromorpha_core.db import session
@@ -69,8 +71,43 @@ async def update(
 
         result = task.to_dict()
 
-    broker.publish(message=result, routing_key="task.updated", exchange=task_topic)
+    await broker.publish(
+        message=result, routing_key="task.updated", exchange=task_topic
+    )
     return result
+
+
+@broker.subscriber("task.get", task_rpc)
+async def get_task(
+    task_id: Union[str, UUID],
+    db_session: sessionmaker = Context(),
+) -> Union[dict, None]:
+    with db_session.begin() as session:
+        task = session.get(model.Task, task_id)
+
+        if task is None:
+            return None
+
+        return task.to_dict()
+
+
+@broker.subscriber("task.get-one", task_rpc)
+async def get_one(
+    worker: str,
+    status: str = "pending",
+    db_session: sessionmaker = Context(),
+) -> Union[dict, None]:
+    with db_session.begin() as session:
+        task = session.execute(
+            select(model.Task).where(
+                (model.Task.worker == worker) & (model.Task.status == status)
+            )
+        ).first()
+
+        if task is None:
+            return None
+
+        return task.to_dict()
 
 
 @broker.subscriber("task.remove", task_rpc)
@@ -87,12 +124,24 @@ async def remove(
             ),
         ):
             # Delete one task by ID.
-            pass
+            stmt = delete(model.Task).where(model.Task.id == task_id)
 
         elif isinstance(task_id, list):
             # Delete tasks by ID.
-            pass
+            stmt = delete(model.Task).where(model.Task.id.in_(task_id))
+
+        return session.execute(stmt).scalar()
 
 
-async def clean_task():
-    pass
+@broker.subscriber("task.clean", task_rpc)
+async def clean_task(
+    worker: str,
+    status: str = "finish",
+    db_session: sessionmaker = Context(),
+):
+    with db_session.begin() as session:
+        stmt = delete(model.Task).where(
+            (model.Task.worker == worker) & (model.Task.status == status)
+        )
+
+        return session.execute(stmt).scalar()
