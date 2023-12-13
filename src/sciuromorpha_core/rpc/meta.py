@@ -244,7 +244,7 @@ def query_without_process_tag(
     offset: int = 0,
     limit: int = 100,
     db_session: sessionmaker = Context(),
-):
+) -> list:
     if not isinstance(tags, list):
         tags = [tags]
 
