@@ -43,14 +43,84 @@ async def merge(
 
 
 @apply_types(cast=False)
+async def add_tag(
+    meta: dict[str, Any],
+    broker: RabbitBroker,
+) -> Union[dict[str, Any], None]:
+    return await broker.publish(
+        meta,
+        "meta.addtag",
+        exchange=meta_rpc,
+        rpc=True,
+    )
+
+
+@apply_types(cast=False)
+async def remove_tag(
+    meta: dict[str, Any],
+    broker: RabbitBroker,
+) -> Union[dict[str, Any], None]:
+    return await broker.publish(
+        meta,
+        "meta.removetag",
+        exchange=meta_rpc,
+        rpc=True,
+    )
+
+
+@apply_types(cast=False)
 async def get(
     id: Union[str, UUID],
     broker: RabbitBroker,
-    with_tasks: bool = False,
+    **kwargs,
 ) -> Union[dict[str, Any], None]:
     return await broker.publish(
-        {"id": id, "with_tasks": with_tasks},
+        {"id": id, **kwargs},
         "meta.get",
+        exchange=meta_rpc,
+        rpc=True,
+    )
+
+
+@apply_types(cast=False)
+async def get_by_url(
+    url: str,
+    broker: RabbitBroker,
+) -> Union[dict[str, Any], None]:
+    return await broker.publish(
+        {"url": url},
+        "meta.get_by_url",
+        exchange=meta_rpc,
+        rpc=True,
+    )
+
+
+@apply_types(cast=False)
+async def query_by_tag(
+    tags: Union[str, list[str]],
+    broker: RabbitBroker,
+    **kwargs,
+) -> list:
+    return await broker.publish(
+        {
+            "tags": tags,
+            **kwargs,
+        },
+        "meta.query-by-tag",
+        exchange=meta_rpc,
+        rpc=True,
+    )
+
+
+@apply_types(cast=False)
+async def query_witout_tag(
+    tags: Union[str, list[str]],
+    broker: RabbitBroker,
+    **kwargs,
+) -> list:
+    return await broker.publish(
+        {"tags": tags, **kwargs},
+        "meta.query-without-tag",
         exchange=meta_rpc,
         rpc=True,
     )
