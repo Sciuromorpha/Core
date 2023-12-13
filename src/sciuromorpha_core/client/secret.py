@@ -74,6 +74,7 @@ async def delete(
 ) -> Any:
     """
     Delete a secret by service&key.
+    Return last store data.
     """
     return await broker.publish(
         {
