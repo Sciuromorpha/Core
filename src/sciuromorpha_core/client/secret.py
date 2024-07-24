@@ -1,4 +1,3 @@
-from uuid import UUID
 from typing import Any, Union
 from faststream import apply_types
 from faststream.rabbit.annotations import RabbitBroker
