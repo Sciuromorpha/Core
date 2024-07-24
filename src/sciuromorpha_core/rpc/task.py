@@ -41,7 +41,7 @@ async def create(
 
 @broker.subscriber("task.update", task_rpc)
 async def update(
-    task_id: Union[str, UUID],
+    id: Union[str, UUID],
     broker: BrokerAnnotation,
     worker: str = None,
     param: Any = None,
@@ -50,7 +50,7 @@ async def update(
     db_session: sessionmaker = Context(),
 ) -> Union[None, dict]:
     with db_session.begin() as session:
-        task = session.get(model.Task, task_id)
+        task = session.get(model.Task, id)
 
         if task is None:
             return None
@@ -79,11 +79,11 @@ async def update(
 
 @broker.subscriber("task.get", task_rpc)
 async def get_task(
-    task_id: Union[str, UUID],
+    id: Union[str, UUID],
     db_session: sessionmaker = Context(),
 ) -> Union[dict, None]:
     with db_session.begin() as session:
-        task = session.get(model.Task, task_id)
+        task = session.get(model.Task, id)
 
         if task is None:
             return None
@@ -112,23 +112,23 @@ async def get_one(
 
 @broker.subscriber("task.remove", task_rpc)
 async def remove(
-    task_id: Union[str, UUID, list],
+    id: Union[str, UUID, list],
     db_session: sessionmaker = Context(),
 ):
     with db_session.begin() as session:
         if isinstance(
-            task_id,
+            id,
             (
                 str,
                 UUID,
             ),
         ):
             # Delete one task by ID.
-            stmt = delete(model.Task).where(model.Task.id == task_id)
+            stmt = delete(model.Task).where(model.Task.id == id)
 
-        elif isinstance(task_id, list):
+        elif isinstance(id, list):
             # Delete tasks by ID.
-            stmt = delete(model.Task).where(model.Task.id.in_(task_id))
+            stmt = delete(model.Task).where(model.Task.id.in_(id))
 
         return session.execute(stmt).scalar()
 
