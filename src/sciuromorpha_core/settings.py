@@ -23,7 +23,7 @@ class Settings(BaseSettings):
             "mq", "rabbit", "rabbmitmq", "rabbitmq_url", "amqp")
     )
     db: PostgresDsn = Field(
-        "postgres://user:pass@localhost:5432/core",
+        "postgresql://user:pass@localhost:5432/core",
         validation_alias=AliasChoices("db", "db_url", "pg", "pg_url"),
     )
     redis: RedisDsn = Field(
