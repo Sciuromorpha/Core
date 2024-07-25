@@ -1,4 +1,5 @@
 from sciuromorpha_core import static as S
+from sciuromorpha_core.config import config as core_config
 from pydantic import (
     AliasChoices,
     AmqpDsn,
@@ -18,12 +19,14 @@ class Settings(BaseSettings):
     )
 
     mq: AmqpDsn = Field(
-        "amqp://guest:guest@localhost:5672/",
+        # "amqp://guest:guest@localhost:5672/",
+        core_config[S.CONFIG_SECTION_MESSAGEQUEUE]["url"],
         validation_alias=AliasChoices(
             "mq", "rabbit", "rabbmitmq", "rabbitmq_url", "amqp")
     )
     db: PostgresDsn = Field(
-        "postgresql://user:pass@localhost:5432/core",
+        # "postgresql://user:pass@localhost:5432/core",
+        core_config[S.CONFIG_SECTION_DATABASE]["url"],
         validation_alias=AliasChoices("db", "db_url", "pg", "pg_url"),
     )
     redis: RedisDsn = Field(
