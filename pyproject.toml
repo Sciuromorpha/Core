@@ -19,6 +19,8 @@ pytest = "^7.4.3"
 black = "^23.11.0"
 pylance = "^0.8.20"
 watchfiles = "^0.21.0"
+uvicorn = "^0.30.5"
+fastapi = "^0.112.0"
 
 [build-system]
 requires = ["poetry-core"]
