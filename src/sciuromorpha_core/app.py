@@ -27,8 +27,6 @@ async def setup(
     settings = Settings(_env_file=os.environ.get(S.ENV_DOT_FILE, env))
     context.set_global("settings", settings)
 
-    from sciuromorpha_core import rpc  # noqa: F401
-
     await broker.connect(str(settings.mq))
     logger.debug("connect to mq success")
 
