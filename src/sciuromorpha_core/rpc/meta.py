@@ -12,8 +12,7 @@ from faststream.rabbit.annotations import (
 )
 
 from sciuromorpha_core import S, model
-from sciuromorpha_core.db import session
-from sciuromorpha_core.app import app, broker
+from sciuromorpha_core.app import broker
 from sciuromorpha_core.mq_schema import meta_rpc, meta_topic
 
 
