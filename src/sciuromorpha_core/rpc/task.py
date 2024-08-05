@@ -21,7 +21,7 @@ from sciuromorpha_core.mq_schema import task_rpc, task_topic
 
 @broker.subscriber("task.create", task_rpc)
 @broker.publisher(routing_key="task.created", exchange=task_topic)
-async def create(
+async def task_create(
     worker: str,
     param: Any = None,
     meta_id: Union[str, UUID, None] = None,
@@ -40,7 +40,7 @@ async def create(
 
 
 @broker.subscriber("task.update", task_rpc)
-async def update(
+async def task_update(
     id: Union[str, UUID],
     broker: BrokerAnnotation,
     worker: str = None,
@@ -78,7 +78,7 @@ async def update(
 
 
 @broker.subscriber("task.get", task_rpc)
-async def get_task(
+async def task_get(
     id: Union[str, UUID],
     db_session: sessionmaker = Context(),
 ) -> Union[dict, None]:
@@ -92,7 +92,7 @@ async def get_task(
 
 
 @broker.subscriber("task.get-one", task_rpc)
-async def get_one(
+async def task_get_one(
     worker: str,
     status: str = "pending",
     db_session: sessionmaker = Context(),
@@ -111,7 +111,7 @@ async def get_one(
 
 
 @broker.subscriber("task.remove", task_rpc)
-async def remove(
+async def task_remove(
     id: Union[str, UUID, list],
     db_session: sessionmaker = Context(),
 ):
@@ -134,7 +134,7 @@ async def remove(
 
 
 @broker.subscriber("task.clean", task_rpc)
-async def clean_task(
+async def task_clean(
     worker: str,
     status: str = "finish",
     db_session: sessionmaker = Context(),

@@ -52,7 +52,7 @@ def clone_process_tag(meta: model.Meta):
 
 @broker.subscriber("meta.create", meta_rpc)
 @broker.publisher(routing_key="meta.created", exchange=meta_topic)
-def create(
+def meta_create(
     data: dict[str, Any],
     process_tag: list[str] = [],
     db_session: sessionmaker = Context(),
@@ -75,7 +75,7 @@ def create(
 
 
 @broker.subscriber("meta.merge", meta_rpc)
-async def merge(
+async def meta_merge(
     id: Union[str, UUID],
     data: dict,
     broker: RabbitBroker,
@@ -114,7 +114,7 @@ async def merge(
 
 
 @broker.subscriber("meta.addtag", meta_rpc)
-def add_process_tag(
+def meta_add_process_tag(
     id: Union[str, UUID],
     process_tag: Union[str, list[str]],
     db_session: sessionmaker = Context(),
@@ -142,7 +142,7 @@ def add_process_tag(
 
 
 @broker.subscriber("meta.removetag", meta_rpc)
-def remove_process_tag(
+def meta_remove_process_tag(
     id: Union[str, UUID],
     process_tag: Union[str, list[str]],
     db_session: sessionmaker = Context(),
@@ -176,7 +176,7 @@ def remove_process_tag(
 
 
 @broker.subscriber("meta.get", meta_rpc)
-def get_by_id(
+def meta_get_by_id(
     id: Union[str, UUID],
     with_tasks: bool = False,
     db_session: sessionmaker = Context(),
@@ -197,7 +197,7 @@ def get_by_id(
 
 
 @broker.subscriber("meta.get-by-url", meta_rpc)
-def get_by_origin_url(
+def meta_get_by_origin_url(
     url: str,
     db_session: sessionmaker = Context(),
 ) -> Union[model.Meta, None]:
@@ -215,7 +215,7 @@ def get_by_origin_url(
 
 
 @broker.subscriber("meta.query-by-tag", meta_rpc)
-def query_by_process_tag(
+def meta_query_by_process_tag(
     tags: Union[str, list[str]],
     offset: int = 0,
     limit: int = 100,
@@ -238,7 +238,7 @@ def query_by_process_tag(
 
 
 @broker.subscriber("meta.query-without-tag", meta_rpc)
-def query_without_process_tag(
+def meta_query_without_process_tag(
     tags: Union[str, list[str]],
     offset: int = 0,
     limit: int = 100,

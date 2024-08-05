@@ -13,7 +13,7 @@ from sciuromorpha_core.mq_schema import secret_rpc
 
 
 @broker.subscriber("secret.put", secret_rpc)
-async def put(
+async def secret_put(
     service: str,
     key: str,
     data: Any,
@@ -35,7 +35,7 @@ async def put(
 
 
 @broker.subscriber("secret.get-by-id", secret_rpc)
-async def get_by_id(
+async def secret_get_by_id(
     id: int,
     db_session: sessionmaker = Context(),
 ) -> Union[dict, None]:
@@ -49,7 +49,7 @@ async def get_by_id(
 
 
 @broker.subscriber("secret.get", secret_rpc)
-async def get(
+async def secret_get(
     service: str,
     key: str,
     db_session: sessionmaker = Context(),
