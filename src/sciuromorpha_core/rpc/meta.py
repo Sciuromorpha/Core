@@ -96,9 +96,11 @@ async def meta_merge(
 
         if process_tag is not None:
             clone_tags = clone_process_tag(meta)
-            clone_tags.add(process_tag) if isinstance(
-                process_tag, str
-            ) else clone_tags.update(process_tag)
+            (
+                clone_tags.add(process_tag)
+                if isinstance(process_tag, str)
+                else clone_tags.update(process_tag)
+            )
             meta.process_tag = list(clone_tags)
 
         with session.begin_nested():
@@ -113,7 +115,26 @@ async def meta_merge(
     return result
 
 
-@broker.subscriber("meta.addtag", meta_rpc)
+@broker.subscriber("meta.delete", meta_rpc)
+@broker.publisher(routing_key="meta.deleted", exchange=meta_topic)
+def meta_delete(
+    id: Union[str, UUID],
+    db_session: sessionmaker = Context(),
+) -> Union[dict[str, Any], None]:
+    with db_session.begin() as session:
+        meta = session.get(model.Meta, id)
+        if meta is None:
+            return None
+
+        result = meta.to_dict()
+
+        with session.begin_nested():
+            session.delete(meta)
+
+    return result
+
+
+@broker.subscriber("meta.add-tag", meta_rpc)
 def meta_add_process_tag(
     id: Union[str, UUID],
     process_tag: Union[str, list[str]],
@@ -128,9 +149,11 @@ def meta_add_process_tag(
             return None
 
         clone_tags = clone_process_tag(meta)
-        clone_tags.add(process_tag) if isinstance(
-            process_tag, str
-        ) else clone_tags.update(process_tag)
+        (
+            clone_tags.add(process_tag)
+            if isinstance(process_tag, str)
+            else clone_tags.update(process_tag)
+        )
         meta.process_tag = list(clone_tags)
 
         with session.begin_nested():
@@ -141,7 +164,7 @@ def meta_add_process_tag(
     return result
 
 
-@broker.subscriber("meta.removetag", meta_rpc)
+@broker.subscriber("meta.remove-tag", meta_rpc)
 def meta_remove_process_tag(
     id: Union[str, UUID],
     process_tag: Union[str, list[str]],
